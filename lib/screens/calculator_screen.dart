@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import '../widgets/calculator_button.dart';
+import '../widgets/app_drawer.dart';
 import '../services/history_service.dart';
 import 'history/history_screen.dart';
+import 'converter/currency_converter_screen.dart';
+import 'converter/length_converter_screen.dart';
 
 
 class CalculatorScreen extends StatefulWidget {
@@ -14,6 +17,8 @@ class CalculatorScreen extends StatefulWidget {
 }
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
   String _display = '0';
   double? _firstOperand;
   String? _pendingOperator;
@@ -197,10 +202,31 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     );
   }
 
+  void _openCurrencyConverter() {
+    Navigator.pop(context); // close the drawer first
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
+    );
+  }
+
+  void _openLengthConverter() {
+    Navigator.pop(context); // close the drawer first
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LengthConverterScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.background,
+      drawer: AppDrawer(
+        onCurrencyTap: _openCurrencyConverter,
+        onLengthTap: _openLengthConverter,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -214,7 +240,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.menu, color: AppColors.textWhite, size: 30),
-                    onPressed: () {},
+                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                   ),
                   IconButton(
                     icon: const Icon(Icons.history, color: AppColors.textWhite, size: 30),
@@ -253,7 +279,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              _computedExpression!,
+              _computedExpression!.replaceAll('/', '÷'),
               style: const TextStyle(
                 color: Color(0xFF797070),
                 fontSize: 30,
@@ -278,9 +304,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     }
 
     // Normal typing view: single big line showing the full expression as typed
-    // (e.g. "1+1"), falling back to the raw display before any expression exists.
-    final typingText =
-        _expression.isEmpty ? _display : _expression.replaceAll(' ', '');
+    // (e.g. "1÷1"), falling back to the raw display before any expression exists.
+    final typingText = _expression.isEmpty
+        ? _display
+        : _expression.replaceAll(' ', '').replaceAll('/', '÷');
 
     return Align(
       alignment: Alignment.centerRight,

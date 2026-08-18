@@ -25,6 +25,10 @@ class CalculatorButton extends StatelessWidget {
         ? AppColors.textLight
         : (isOperator ? AppColors.accent : AppColors.textLight);
 
+    // Show a proper division symbol while keeping '/' as the underlying
+    // operator value used everywhere else (calculation, history, etc.).
+    final displayLabel = label == '/' ? '÷' : label;
+
     return AspectRatio(
       aspectRatio: wide ? 2 : 1,
       child: Material(
@@ -35,7 +39,7 @@ class CalculatorButton extends StatelessWidget {
           onTap: onTap,
           child: Center(
             child: Text(
-              label,
+              displayLabel,
               style: TextStyle(
                 color: textColor,
                 fontSize: 25,
