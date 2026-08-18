@@ -29,6 +29,21 @@ class HistoryService {
         .toList(); // newest first
   }
 
+  /// Returns entries paired with their Hive keys, newest first.
+  /// Needed so specific entries can be deleted (not just "clear all").
+  static List<MapEntry<dynamic, HistoryEntry>> getAllEntriesWithKeys() {
+    final keys = _box.keys.toList().reversed.toList(); // newest first
+    return keys.map((key) {
+      final map = Map<dynamic, dynamic>.from(_box.get(key));
+      return MapEntry(key, HistoryEntry.fromMap(map));
+    }).toList();
+  }
+
+  /// Deletes only the entries matching the given keys.
+  static Future<void> deleteByKeys(Iterable<dynamic> keys) async {
+    await _box.deleteAll(keys);
+  }
+
   static Future<void> clearAll() async {
     await _box.clear();
   }

@@ -23,6 +23,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   String _expression = '';
   bool _afterEquals = false;
 
+  // --- "Totals" display additions ---
+  // When non-null, shows as a small gray line above the big result
+  // (e.g. "1+1" above "2"), matching the post-equals design.
+  String? _computedExpression;
+
   void _onDigitPressed(String digit) {
     setState(() {
       if (_display == '0' || _shouldResetDisplay) {
@@ -35,6 +40,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       if (_afterEquals) {
         _expression = digit;
         _afterEquals = false;
+        _computedExpression = null;
       } else if (_expression.isEmpty) {
         _expression = digit;
       } else {
@@ -55,6 +61,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       if (_afterEquals) {
         _expression = '0.';
         _afterEquals = false;
+        _computedExpression = null;
       } else if (!_expression.contains('.')) {
         _expression += '.';
       }
@@ -73,6 +80,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       if (_afterEquals) {
         _expression = '$_display $operator ';
         _afterEquals = false;
+        _computedExpression = null;
       } else {
         _expression += ' $operator ';
       }
@@ -114,9 +122,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       _shouldResetDisplay = true;
       _afterEquals = true;
 
-      // Only save if there was an actual expression (avoid saving a bare "0" tap)
+      // Only save/show if there was an actual expression (avoid a bare "0" tap)
       if (expressionToSave.isNotEmpty && expressionToSave.contains(' ')) {
         HistoryService.addEntry(expressionToSave, _display);
+        _computedExpression = expressionToSave;
       }
     });
   }
@@ -129,6 +138,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       _shouldResetDisplay = false;
       _expression = '';
       _afterEquals = false;
+      _computedExpression = null;
     });
   }
 
@@ -214,20 +224,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               ),
               const Spacer(),
               // Display
-              Align(
-                alignment: Alignment.centerRight,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    _display,
-                    style: const TextStyle(
-                      color: AppColors.textWhite,
-                      fontSize: 64,
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                ),
-              ),
+              _buildDisplay(),
               const SizedBox(height: 24),
               // Button grid
               _buildRow(['AC', '←', '%', '/']),
@@ -241,6 +238,60 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               _buildBottomRow(),
               const SizedBox(height: 20),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDisplay() {
+    if (_computedExpression != null) {
+      // Post-equals "totals" view: small gray equation above, big result below
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              _computedExpression!,
+              style: const TextStyle(
+                color: Color(0xFF797070),
+                fontSize: 30,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              _display,
+              style: const TextStyle(
+                color: AppColors.textWhite,
+                fontSize: 64,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Normal typing view: single big line showing the full expression as typed
+    // (e.g. "1+1"), falling back to the raw display before any expression exists.
+    final typingText =
+        _expression.isEmpty ? _display : _expression.replaceAll(' ', '');
+
+    return Align(
+      alignment: Alignment.centerRight,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          typingText,
+          style: const TextStyle(
+            color: AppColors.textWhite,
+            fontSize: 64,
+            fontWeight: FontWeight.normal,
           ),
         ),
       ),
